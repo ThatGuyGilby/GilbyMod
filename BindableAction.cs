@@ -1,9 +1,8 @@
-﻿using BepInEx.Configuration;
-using BepInEx;
-using GTweaking;
-using UnityEngine.InputSystem;
+﻿using BepInEx;
+using BepInEx.Configuration;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace GTweaking;
 

@@ -1,20 +1,14 @@
 ﻿using BepInEx;
 using GameNetcodeStuff;
 using HarmonyLib;
-using System.Diagnostics;
-using UnityEngine.InputSystem;
-using UnityEngine;
-using Debug = UnityEngine.Debug;
-using BepInEx.Logging;
-using Unity.Netcode;
-using UnityEngine.InputSystem.Controls;
-using BepInEx.Configuration;
-using System.Collections.Generic;
 using System;
-using System.Reflection;
-using Object = UnityEngine.Object;
-using System.Globalization;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+using Debug = UnityEngine.Debug;
 
 namespace GTweaking;
 
@@ -22,7 +16,7 @@ namespace GTweaking;
 public class Plugin : BaseUnityPlugin
 {
     public static Plugin Instance;
-    
+
     private static readonly Dictionary<string, MethodInfo> MethodCache = new Dictionary<string, MethodInfo>();
     private static readonly Dictionary<string, FieldInfo> FieldCache = new Dictionary<string, FieldInfo>();
     private static readonly object[] backwardsParam = new object[1] { false };
@@ -64,7 +58,7 @@ public class Plugin : BaseUnityPlugin
     [HarmonyPostfix]
     public static void ReadInput(PlayerControllerB __instance)
     {
-        if ((!((NetworkBehaviour)__instance).IsOwner || !__instance.isPlayerControlled || (((NetworkBehaviour)__instance).IsServer && !__instance.isHostPlayerObject)) && !__instance.isTestingPlayer)
+        if ((!__instance.IsOwner || !__instance.isPlayerControlled || (__instance.IsServer && !__instance.isHostPlayerObject)) && !__instance.isTestingPlayer)
         {
             return;
         }
@@ -73,10 +67,10 @@ public class Plugin : BaseUnityPlugin
 
         foreach (BindableAction boundAction in actionsToProcess)
         {
-            switch(boundAction.Id)
+            switch (boundAction.Id)
             {
                 case ActionID.Flashlight:
-                    if (__instance.currentlyHeldObjectServer is FlashlightItem && (Object)(object)__instance.currentlyHeldObjectServer != (Object)(object)__instance.pocketedFlashlight)
+                    if (__instance.currentlyHeldObjectServer is FlashlightItem && __instance.currentlyHeldObjectServer != __instance.pocketedFlashlight)
                     {
                         __instance.pocketedFlashlight = __instance.currentlyHeldObjectServer;
                     }
@@ -129,10 +123,11 @@ public class Plugin : BaseUnityPlugin
 
     private static void SwitchToSlot(PlayerControllerB __instance, int requestedSlot)
     {
-        if (!isItemSwitchPossible(__instance) || __instance.currentItemSlot == requestedSlot)
+        if (!CanSwap(__instance) || __instance.currentItemSlot == requestedSlot)
         {
             return;
         }
+
         ShipBuildModeManager.Instance.CancelBuildMode(true);
         __instance.playerBodyAnimator.SetBool("GrabValidated", false);
         int num = __instance.currentItemSlot - requestedSlot;
@@ -171,9 +166,9 @@ public class Plugin : BaseUnityPlugin
                 __instance.ItemSlots[requestedSlot]
         };
         GetPrivateMethod("SwitchToItemSlot").Invoke(__instance, parameters);
-        if ((Object)(object)__instance.currentlyHeldObjectServer != (Object)null)
+        if (__instance.currentlyHeldObjectServer != null)
         {
-            ((Component)__instance.currentlyHeldObjectServer).gameObject.GetComponent<AudioSource>().PlayOneShot(__instance.currentlyHeldObjectServer.itemProperties.grabSFX, 0.6f);
+            (__instance.currentlyHeldObjectServer).gameObject.GetComponent<AudioSource>().PlayOneShot(__instance.currentlyHeldObjectServer.itemProperties.grabSFX, 0.6f);
         }
         GetPrivateField("timeSinceSwitchingSlots").SetValue(__instance, 0f);
     }
@@ -212,7 +207,7 @@ public class Plugin : BaseUnityPlugin
         return value;
     }
 
-    private static bool isItemSwitchPossible(PlayerControllerB __instance)
+    private static bool CanSwap(PlayerControllerB __instance)
     {
         float num = (float)GetPrivateField("timeSinceSwitchingSlots").GetValue(__instance);
         bool flag = (bool)GetPrivateField("throwingObject").GetValue(__instance);
