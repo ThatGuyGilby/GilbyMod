@@ -14,6 +14,7 @@ using System;
 using System.Reflection;
 using Object = UnityEngine.Object;
 using System.Globalization;
+using System.Linq;
 
 namespace GTweaking;
 
@@ -68,16 +69,9 @@ public class Plugin : BaseUnityPlugin
             return;
         }
 
-        List<BindableAction> actionsToProcess = new List<BindableAction>();
-        foreach (var boundAction in BindableAction.ActionDictionary.Values)
-        {
-            if (((ButtonControl)Keyboard.current[boundAction.ConfigEntry.Value]).wasPressedThisFrame)
-            {
-                actionsToProcess.Add(boundAction);
-            }
-        }
+        List<BindableAction> actionsToProcess = BindableAction.ActionDictionary.Values.Where(boundAction => ((ButtonControl)Keyboard.current[boundAction.ConfigEntry.Value]).wasPressedThisFrame).ToList();
 
-        foreach (var boundAction in actionsToProcess)
+        foreach (BindableAction boundAction in actionsToProcess)
         {
             switch(boundAction.Id)
             {
@@ -95,51 +89,45 @@ public class Plugin : BaseUnityPlugin
                     __instance.pocketedFlashlight.UseItemOnClient(true);
                     if (!(__instance.currentlyHeldObjectServer is FlashlightItem))
                     {
-                        GrabbableObject pocketedFlashlight = __instance.pocketedFlashlight;
-                        GrabbableObject pocketedFlashlight2 = __instance.pocketedFlashlight;
-                        ((Behaviour)((FlashlightItem)((pocketedFlashlight2 is FlashlightItem) ? pocketedFlashlight2 : null)).flashlightBulbGlow).enabled = false;
-                        GrabbableObject pocketedFlashlight3 = __instance.pocketedFlashlight;
-                        ((Behaviour)((FlashlightItem)((pocketedFlashlight3 is FlashlightItem) ? pocketedFlashlight3 : null)).flashlightBulb).enabled = false;
-                        GrabbableObject pocketedFlashlight4 = __instance.pocketedFlashlight;
-                        if (((pocketedFlashlight4 is FlashlightItem) ? pocketedFlashlight4 : null).isBeingUsed)
+                        FlashlightItem flashlight = __instance.pocketedFlashlight as FlashlightItem;
+                        flashlight.flashlightBulbGlow.enabled = false;
+                        flashlight.flashlightBulb.enabled = false;
+
+                        if (flashlight.isBeingUsed)
                         {
                             ((Behaviour)__instance.helmetLight).enabled = true;
-                            GrabbableObject pocketedFlashlight5 = __instance.pocketedFlashlight;
-                            ((FlashlightItem)((pocketedFlashlight5 is FlashlightItem) ? pocketedFlashlight5 : null)).usingPlayerHelmetLight = true;
-                            GrabbableObject pocketedFlashlight6 = __instance.pocketedFlashlight;
-                            ((FlashlightItem)((pocketedFlashlight6 is FlashlightItem) ? pocketedFlashlight6 : null)).PocketFlashlightServerRpc(true);
+                            flashlight.usingPlayerHelmetLight = true;
+                            flashlight.PocketFlashlightServerRpc(true);
                         }
                         else
                         {
                             ((Behaviour)__instance.helmetLight).enabled = false;
-                            GrabbableObject pocketedFlashlight7 = __instance.pocketedFlashlight;
-                            ((FlashlightItem)((pocketedFlashlight7 is FlashlightItem) ? pocketedFlashlight7 : null)).usingPlayerHelmetLight = false;
-                            GrabbableObject pocketedFlashlight8 = __instance.pocketedFlashlight;
-                            ((FlashlightItem)((pocketedFlashlight8 is FlashlightItem) ? pocketedFlashlight8 : null)).PocketFlashlightServerRpc(false);
+                            flashlight.usingPlayerHelmetLight = false;
+                            flashlight.PocketFlashlightServerRpc(false);
                         }
                     }
                     break;
                 case ActionID.Slot0:
-                    stopEmotes(__instance);
-                    switchItemSlots(__instance, 0);
+                    StopEmotes(__instance);
+                    SwitchToSlot(__instance, 0);
                     break;
                 case ActionID.Slot1:
-                    stopEmotes(__instance);
-                    switchItemSlots(__instance, 1);
+                    StopEmotes(__instance);
+                    SwitchToSlot(__instance, 1);
                     break;
                 case ActionID.Slot2:
-                    stopEmotes(__instance);
-                    switchItemSlots(__instance, 2);
+                    StopEmotes(__instance);
+                    SwitchToSlot(__instance, 2);
                     break;
                 case ActionID.Slot3:
-                    stopEmotes(__instance);
-                    switchItemSlots(__instance, 3);
+                    StopEmotes(__instance);
+                    SwitchToSlot(__instance, 3);
                     break;
             }
         }
     }
 
-    private static void switchItemSlots(PlayerControllerB __instance, int requestedSlot)
+    private static void SwitchToSlot(PlayerControllerB __instance, int requestedSlot)
     {
         if (!isItemSwitchPossible(__instance) || __instance.currentItemSlot == requestedSlot)
         {
@@ -231,7 +219,7 @@ public class Plugin : BaseUnityPlugin
         return !((double)num < 0.01 || __instance.inTerminalMenu || __instance.isGrabbingObjectAnimation || __instance.inSpecialInteractAnimation || flag) && !__instance.isTypingChat && !__instance.twoHanded && !__instance.activatingItem && !__instance.jetpackControls && !__instance.disablingJetpackControls;
     }
 
-    private static void stopEmotes(PlayerControllerB __instance)
+    private static void StopEmotes(PlayerControllerB __instance)
     {
         __instance.performingEmote = false;
         __instance.StopPerformingEmoteServerRpc();
