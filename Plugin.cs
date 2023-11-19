@@ -10,9 +10,9 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using Debug = UnityEngine.Debug;
 
-namespace GTweaking;
+namespace GilbyMod;
 
-[BepInPlugin("GTweaking", "GTweaking", "1.0.0")]
+[BepInPlugin("GilbyMod", "GilbyMod", "1.0.2")]
 public class Plugin : BaseUnityPlugin
 {
     public static Plugin Instance;
@@ -24,11 +24,11 @@ public class Plugin : BaseUnityPlugin
 
     public static class PluginInfo
     {
-        public const string PLUGIN_GUID = "GTweaking";
+        public const string PLUGIN_GUID = "GilbyMod";
 
-        public const string PLUGIN_NAME = "GTweaking";
+        public const string PLUGIN_NAME = "GilbyMod";
 
-        public const string PLUGIN_VERSION = "1.0.0";
+        public const string PLUGIN_VERSION = "1.0.2";
     }
 
     private void Awake()
@@ -42,6 +42,8 @@ public class Plugin : BaseUnityPlugin
             BindableAction.Create(ActionID.Slot2, Key.Digit3, "Your third item slot");
             BindableAction.Create(ActionID.Slot3, Key.Digit4, "Your fourth item slot");
             BindableAction.Create(ActionID.Flashlight, Key.F, "Toggle your held flashlight on/off");
+            BindableAction.Create(ActionID.Emote1, Key.F1, "Dance");
+            BindableAction.Create(ActionID.Emote2, Key.F2, "Point");
 
             var harmony = new Harmony("GTweaking");
             harmony.PatchAll(typeof(Plugin));
@@ -117,6 +119,12 @@ public class Plugin : BaseUnityPlugin
                     StopEmotes(__instance);
                     SwitchToSlot(__instance, 3);
                     break;
+                case ActionID.Emote1:
+                    PerformEmote(__instance, 1);
+                    break;
+                case ActionID.Emote2:
+                    PerformEmote(__instance, 2);
+                    break;
             }
         }
     }
@@ -171,6 +179,14 @@ public class Plugin : BaseUnityPlugin
             (__instance.currentlyHeldObjectServer).gameObject.GetComponent<AudioSource>().PlayOneShot(__instance.currentlyHeldObjectServer.itemProperties.grabSFX, 0.6f);
         }
         GetPrivateField("timeSinceSwitchingSlots").SetValue(__instance, 0f);
+    }
+
+    private static void PerformEmote(PlayerControllerB __instance, int emoteId)
+    {
+        __instance.timeSinceStartingEmote = 0f;
+        __instance.performingEmote = true;
+        __instance.playerBodyAnimator.SetInteger("emoteNumber", emoteId);
+        __instance.StartPerformingEmoteServerRpc();
     }
 
     private static MethodInfo GetPrivateMethod(string name)

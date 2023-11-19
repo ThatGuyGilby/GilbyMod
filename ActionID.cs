@@ -1,4 +1,4 @@
-﻿namespace GTweaking;
+﻿namespace GilbyMod;
 
 public enum ActionID
 {
@@ -6,5 +6,7 @@ public enum ActionID
     Slot0,
     Slot1,
     Slot2,
-    Slot3
+    Slot3,
+    Emote1,
+    Emote2
 }

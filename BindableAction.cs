@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace GTweaking;
+namespace GilbyMod;
 
 public sealed class BindableAction
 {
