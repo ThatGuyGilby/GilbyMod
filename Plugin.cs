@@ -9,10 +9,11 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace GilbyMod;
 
-[BepInPlugin("GilbyMod", "GilbyMod", "1.0.2")]
+[BepInPlugin("GilbyMod", "GilbyMod", "1.1.0")]
 public class Plugin : BaseUnityPlugin
 {
     public static Plugin Instance;
@@ -28,7 +29,7 @@ public class Plugin : BaseUnityPlugin
 
         public const string PLUGIN_NAME = "GilbyMod";
 
-        public const string PLUGIN_VERSION = "1.0.2";
+        public const string PLUGIN_VERSION = "1.1.0";
     }
 
     private void Awake()
@@ -44,6 +45,7 @@ public class Plugin : BaseUnityPlugin
             BindableAction.Create(ActionID.Flashlight, Key.F, "Toggle your held flashlight on/off");
             BindableAction.Create(ActionID.Emote1, Key.F1, "Dance");
             BindableAction.Create(ActionID.Emote2, Key.F2, "Point");
+            BindableAction.Create(ActionID.Walkie, Key.R, "Walkie");
 
             var harmony = new Harmony("GTweaking");
             harmony.PatchAll(typeof(Plugin));
@@ -65,9 +67,20 @@ public class Plugin : BaseUnityPlugin
             return;
         }
 
-        List<BindableAction> actionsToProcess = BindableAction.ActionDictionary.Values.Where(boundAction => ((ButtonControl)Keyboard.current[boundAction.ConfigEntry.Value]).wasPressedThisFrame).ToList();
+        List<BindableAction> actionsPressedThisFrame = BindableAction.ActionDictionary.Values.Where(boundAction => ((ButtonControl)Keyboard.current[boundAction.ConfigEntry.Value]).wasPressedThisFrame).ToList();
+        List<BindableAction> actionsReleasedThisFrame = BindableAction.ActionDictionary.Values.Where(boundAction => ((ButtonControl)Keyboard.current[boundAction.ConfigEntry.Value]).wasReleasedThisFrame).ToList();
 
-        foreach (BindableAction boundAction in actionsToProcess)
+        GrabbableObject walkie = null;
+
+        for (int i = 0; i < __instance.ItemSlots.Length; i++)
+        {
+            if (__instance.ItemSlots[i] is WalkieTalkie && __instance.ItemSlots[i].isBeingUsed)
+            {
+                walkie = __instance.ItemSlots[i];
+            }
+        }
+
+        foreach (BindableAction boundAction in actionsPressedThisFrame)
         {
             switch (boundAction.Id)
             {
@@ -124,6 +137,43 @@ public class Plugin : BaseUnityPlugin
                     break;
                 case ActionID.Emote2:
                     PerformEmote(__instance, 2);
+                    break;
+                case ActionID.Walkie:
+
+                    if ((Object)(object)walkie == null)
+                    {
+                        return;
+                    }
+                    if (__instance.currentlyHeldObjectServer is WalkieTalkie)
+                    {
+                        __instance.currentlyHeldObjectServer.UseItemOnClient(true);
+                    }
+                    else if ((Object)(object)walkie != (Object)null)
+                    {
+                        walkie.UseItemOnClient(true);
+                    }
+                    break;
+            }
+        }
+
+        foreach (BindableAction boundAction in actionsReleasedThisFrame)
+        {
+            switch (boundAction.Id)
+            {
+                case ActionID.Walkie:
+
+                    if ((Object)(object)walkie == null)
+                    {
+                        return;
+                    }
+                    if (__instance.currentlyHeldObjectServer is WalkieTalkie)
+                    {
+                        __instance.currentlyHeldObjectServer.UseItemOnClient(false);
+                    }
+                    else if ((Object)(object)walkie != (Object)null)
+                    {
+                        walkie.UseItemOnClient(false);
+                    }
                     break;
             }
         }

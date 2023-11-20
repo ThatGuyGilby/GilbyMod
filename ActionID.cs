@@ -8,5 +8,6 @@ public enum ActionID
     Slot2,
     Slot3,
     Emote1,
-    Emote2
+    Emote2,
+    Walkie
 }
